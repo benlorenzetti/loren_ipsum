@@ -19,24 +19,9 @@ int main () {
   // Test header parser
   ipsum str4;
   lor_init (&str4, "@1234");
-  *str4 = (128 + sizeof (int) + 256);
-  int allocation_size, string_length;
-  switch (lor_parse_header (str4, &allocation_size, &string_length))
-  {
-    case LOR_CHAR_HDR:
-      printf ("char, %d, %d\n", allocation_size, string_length);
-    break;
-    case LOR_SHORT_HDR:
-      printf ("short, %d, %d\n", allocation_size, string_length);
-    break;
-    case LOR_INT_HDR:
-      printf ("int, %d, %d\n", allocation_size, string_length);
-    break;
-    case LOR_ZERO_HDR:
-      printf ("zero error\n");
-    break;
-    default:
-      printf ("default.\n");
-  }
+  *str4 = (128 + 7 + 16384);
+  int header_size, allocation_size, string_length;
+  header_size = lor_parse_header (str4, &allocation_size, &string_length);
+  printf ("Sizes: (header) %d, (allocation) %d, (str length) %d\n", header_size, allocation_size, string_length);
 
 }

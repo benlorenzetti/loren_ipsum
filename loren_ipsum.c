@@ -6,7 +6,7 @@
 #include <string.h>
 #include "loren_ipsum.h"
 
-enum htype lor_parse_header (const void *hdr,
+int lor_parse_header (const void *hdr,
   unsigned int *alloc_size,
   unsigned int *str_length)
 {
@@ -18,11 +18,19 @@ enum htype lor_parse_header (const void *hdr,
   if (0 == (continue_flag & hdr_copy))
   {
     /* The header is 1 byte long */
-    *alloc_size = continue_flag;
-    while (0 == (*alloc_size & hdr_copy))
-      *alloc_size = *alloc_size >> 1;
-    *str_length = ((char) hdr_copy) - *alloc_size;
-    return LOR_CHAR_HDR;
+    *alloc_size = continue_flag >> 1;
+    if (0 != (*alloc_size & hdr_copy))
+    {
+      *str_length = ((char) hdr_copy) - *alloc_size;
+      *alloc_size = *str_length;
+    }
+    else 
+    {
+      while (0 == (*alloc_size & hdr_copy))
+        *alloc_size = *alloc_size >> 1;
+      *str_length = ((char) hdr_copy) - *alloc_size;
+    }
+    return sizeof (char);
   }
   else
   {
@@ -35,11 +43,19 @@ enum htype lor_parse_header (const void *hdr,
     {
       /* The header has length of short */
       *(char*) &hdr_copy = (char) hdr_copy >> 1; /* restore length */
-      *alloc_size = continue_flag;
-      while (0 == (*alloc_size & hdr_copy))
-        *alloc_size = *alloc_size >> 1;
-      *str_length = ((short)hdr_copy) - *alloc_size;
-      return LOR_SHORT_HDR;
+      *alloc_size = continue_flag >> 1;
+      if (0 != (*alloc_size & hdr_copy))
+      {
+        *str_length = ((short) hdr_copy) - *alloc_size;
+        *alloc_size = *str_length;
+      }
+      else
+      {
+        while (0 == (*alloc_size & hdr_copy))
+          *alloc_size = *alloc_size >> 1;
+        *str_length = ((short)hdr_copy) - *alloc_size;
+      }
+      return sizeof (short);
     }
     else
     {
@@ -51,18 +67,26 @@ enum htype lor_parse_header (const void *hdr,
       {
         /* The header has length of int */
         *(short*) &hdr_copy = (short) hdr_copy >> 2; /* restore length x 2 */
-        *alloc_size = continue_flag;
-        while (0 == (*alloc_size & hdr_copy))
-          *alloc_size = *alloc_size >> 1;
-        *str_length = ((int)hdr_copy) - *alloc_size;
-        return LOR_INT_HDR;
+        *alloc_size = continue_flag >> 1;
+        if (0 != (*alloc_size & hdr_copy))
+        {
+          *str_length = ((int) hdr_copy) - *alloc_size;
+          *alloc_size = *str_length;
+        }
+        else
+        {
+          while (0 == (*alloc_size & hdr_copy))
+            *alloc_size = *alloc_size >> 1;
+          *str_length = ((int)hdr_copy) - *alloc_size;
+        }
+        return sizeof (int);
       }
       else
       {
         /* Headers longer than integer not yet implemented. */
         *alloc_size = 0;
         *str_length = 0;
-        return LOR_ZERO_HDR;
+        return 0;
       }
     }
   }
