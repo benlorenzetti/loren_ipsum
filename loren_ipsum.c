@@ -11,6 +11,10 @@ int lor_parse_header (const void *hdr,
   unsigned int *str_length)
 {
   int hdr_copy, continue_flag;
+
+  /* Skip any padding, then make a copy of header for manipulation */
+  while (*(char*)hdr == ' ')
+    hdr++;
   hdr_copy = *(int*)hdr;
 
   /* Test if the first byte has header continue flag */
@@ -59,7 +63,7 @@ int lor_parse_header (const void *hdr,
     }
     else
     {
-      *(short*) &hdr_copy = (short) hdr_copy << 1; /* rotate out old cont flag */
+      *(short*) &hdr_copy = (short) hdr_copy << 1; /*rotate out old cont flag*/
 
       /* Test if the first int has header continue flag */
       continue_flag = 1 << (sizeof (int) * 8 - 1);
@@ -67,14 +71,17 @@ int lor_parse_header (const void *hdr,
       {
         /* The header has length of int */
         *(short*) &hdr_copy = (short) hdr_copy >> 2; /* restore length x 2 */
+        /* Test if the allocation size equals the str length */
         *alloc_size = continue_flag >> 1;
         if (0 != (*alloc_size & hdr_copy))
         {
+          /* Allocation size = str len; find str len */
           *str_length = ((int) hdr_copy) - *alloc_size;
           *alloc_size = *str_length;
         }
         else
         {
+          /* Determine the allocation size and str len separately */
           while (0 == (*alloc_size & hdr_copy))
             *alloc_size = *alloc_size >> 1;
           *str_length = ((int)hdr_copy) - *alloc_size;
