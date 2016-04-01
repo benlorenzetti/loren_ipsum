@@ -19,9 +19,10 @@ int main () {
   // Test header parser
   ipsum str4;
   lor_init (&str4, "@1234");
-  *str4 = (128 + 7 + 16384);
-  int header_size, allocation_size, string_length;
-  header_size = lor_parse_header (str4, &allocation_size, &string_length);
-  printf ("Sizes: (header) %d, (allocation) %d, (str length) %d\n", header_size, allocation_size, string_length);
+  *str4 = (128 + 7 + 256);
+  int header_size, alloc_size, lor_length;
+  header_size = lor_parse_header (str4, &alloc_size, &lor_length);
+  printf ("Sizes: (header) %d, (allocation) %d, ", header_size, alloc_size);
+  printf ("(\"lor length\") %d\n", lor_length);
 
 }
