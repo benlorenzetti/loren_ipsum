@@ -5,10 +5,18 @@
 
 int main () {
 
-  // Test Dynamic Initalization
-  ipsum str1, str2, str3, str4, str5, str6;
+  // Test binary_header_helper Function
+  char str1[] = {64, 'a', 'b', 'c'};
+  char str2[] = {1, 0, 0, 0, 4+1, 0, 0, 0};
+  char binary_header[100];
+  printf ("Testing binary_helper_function()\n");
+  printf ("str1 (an '@' header): %s\n", binary_header_helper (binary_header, str1));
+  printf ("str2 (a concurrent header): %s\n", binary_header_helper (binary_header, str2)); 
 
-  lor_init (&str1, LOR_CONCURRENT, 0);
+  // Test Dynamic Initalization
+//  ipsum str1, str2, str3, str4, str5, str6;
+
+//  lor_init (&str1, LOR_CONCURRENT, 0);
 
 
 /*

@@ -6,6 +6,57 @@
 #include <string.h>
 #include "loren_ipsum.h"
 
+char* binary_header_helper (char *dest, const void *src)
+{
+  int header, index;
+  index = 0;
+  char *csrc;
+  csrc = (char*) src;
+
+  // Determine # of Bytes in Header //
+  do {
+    header = csrc[index];
+    switch (header)
+    {
+      case 0:
+        index += 0;
+        header = 0;
+        break;
+      case 1:
+      case 2:
+      case 4:
+      case 8:
+      case 16:
+      case 32:
+        index += 4;
+        break;
+      case 64:
+        index += 1;
+        header = 0;
+        break;
+      default:
+        if (header & 128)
+          index++;
+        else {
+          index++;
+          header = 0;
+        }
+    }
+  } while (header);
+  
+  // Copy Bytes of Header in Binary //
+  memset (dest, ' ', 100);
+  int i, j;
+  for (i = 0; i < 8*index; i++)
+  {
+    j = 9 * (i/8) + (i%8);
+    dest[j] = ((1 << (i%8)) & csrc[i/8]) ? '1' : '0';
+  }
+  dest[j+1] = 0;
+
+  return dest;
+}
+
 ipsum lor_init (ipsum *target, int flags, int alloc_size)
 {
   int ipsize, hdr_length, str_length;
