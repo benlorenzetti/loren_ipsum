@@ -6,9 +6,69 @@
 #include <string.h>
 #include "loren_ipsum.h"
 
-extern inline int lor_parse_header (const void *hdr,
-  unsigned int *alloc_size,
-  unsigned int *lor_length)
+ipsum lor_init (ipsum *target, const char *init_param, int alloc_size)
+{
+  /* The initialization parameter is usually a loren_ipsum string that should
+   * be copied into the new dynamic ipsum string.
+   * There are 8 special exceptions, each with an action:
+   * (1) Zero - generate empty string
+   * (2) LOR_RECURRENT - generate threadsafe header + empty string
+   * (3) LOR_RECURSE - generate recursion header + empty set
+   * (4) LOR_REL_PTR - error
+   * (5) LOR_ABS_PTR - error
+   * (6) LOR_PADDING - error
+   * (7) LOR_CSTRING - generate loren ipsum string from C string
+   */ 
+
+  char header[LOR_MAX_HEADER_LENGTH];
+  int ipsize, hdr_length, str_length, alloc_size;
+  ipsize = header_length = alloc_size = 0;
+
+  if (LOR_CONCURRENT & init_param[0])
+  {
+    printf ("lor_init() concurrency not yet supported.\n");
+  }
+
+  if ((LOR_RECURSE & init_param[0]) && (LOR_ABS_PTR & init_param[0]))
+  {
+    fprintf (stderr, "Error: LOR_RECURSE and LOR_ABS_PTR are mutually");
+    fprintf (stderr, " exclusive options for lor_init()\n");
+    exit (EXIT_FAILURE);
+  }
+
+  if (LOR_RECURSE & init_parameters[0])
+  {
+    printf ("lor_init() recursive strings not yet supported.\n");
+  }
+
+  if (LOR_ABS_PTR & init_parameters[0])
+  {
+    printf ("lor_init() absolute pointers not yet implemented.\n");
+  }
+
+  if (LOR_PADDING & init_parameters[0])
+  {
+    fprintf (stderr, "Error: LOR_PADDING not valid option for lor_init()\n");
+    exit (EXIT_FAILURE);
+  }
+
+  if ((LOR_CSTRING & init_parameters[0]) & (~LOR_CSTRING & init_parameters[0]))
+  {
+    fprintf (stderr, "Error: LOR_CSTRING not compatible with any other ");
+    fprintf (stderr, "options for lor_init().\n");
+    exit (EXIT_FAILURE);
+  }
+
+  if (LOR_CSTRING == init_parameters[0])
+  {
+    printf ("lor_init() c strings not yet implemented.\n");
+  }
+}
+
+
+extern inline int lor_parse_std_header (const void *hdr,
+  int *alloc_size,
+  int *lor_length)
 {
   int hdr_copy, continue_flag;
 
@@ -100,106 +160,3 @@ extern inline int lor_parse_header (const void *hdr,
 }
 
 
-ipsum lor_init (ipsum *target, const char *init_parameters)
-{
-
-  size_t str_length, header_length, alloc_size;
-  char * ctarget;
-
-  /* The initialization parameter is usually a loren_ipsum string that should
-   * be copied into the new dynamic ipsum string.
-   * There are 7 special exceptions, each with an action:
-   * (1) Zero - generate empty string
-   * (2) LOR_THREADSAFE - generate threadsafe header + empty string
-   * (3) LOR_RECURSE - generate recursion header + empty set
-   * (4) LOR_REL_PTR - error
-   * (5) LOR_ABS_PTR - error
-   * (6) LOR_PADDING - error
-   * (7) LOR_CSTRING - generate loren ipsum string from C string
-   */ 
-
-  switch (init_parameters[0])
-  {
-    case LOR_MEMORY_ACCESS_ERROR: 
-      /* Allocate Integer Size of Memory */
-      *target = malloc (sizeof (*target));
-      if (*target == NULL)
-      {
-        *target = NULL; /* this is the only function in loren_ipsum which */
-        return (*target); /* can return NULL. */
-      }
-      /* Fill header with lor_length = 1 and allocation size of integer */
-      **target = 1 + sizeof (*target);
-      /* Return pointer to new loren_ipsum string */
-      return (*target);
-
-    case LOR_THREADSAFE:
-    break;
-    case LOR_RECURSE:
-    break;
-    case LOR_REL_PTR:
-    case LOR_ABS_PTR:      
-    case LOR_PADDING:
-      fprintf (stderr, "lor_init() bad initialization %s\n", init_parameters);
-      exit (EXIT_FAILURE);
-    break;
-
-    case LOR_CSTRING:
-      /* Convert a C-string parameter into Loren Ipsum string */
-
-      /* First, determine the string length after the '@' */
-      str_length = strlen (init_parameters) - 1;
-
-      /* Second, determine the required header size */
-      header_length = 1;
-      size_t mod;
-      mod = 64; /* maximum size for single byte header */
-      while ( (str_length + header_length) / mod > 0)
-      {
-        header_length *= 2;
-        mod *= 128;
-      }
-
-      /* Third, determine the smallest power of 2 allocation size */
-      alloc_size = sizeof (**target);
-        /* (no point mallocing less than the heap alignment size) */
-      while ( (str_length + header_length) > (alloc_size - 1))
-        /* (n - 1 is the largest length that can be specified) */
-        alloc_size *= 2;
-    
-      /* Allocate Memory */
-      *target = malloc (alloc_size / sizeof (*target));
-      if (*target == NULL)
-      {
-        *target = NULL; /* this is the only function in loren_ipsum which */
-        return (*target); /* can return NULL. */
-      }
-      ctarget = (char *) *target;
-
-      /* Create the Loren Ipsum header */
-      str_length = str_length + header_length;
-      while ( (str_length / 64) > 0)
-      {
-        /* (only a size of up to 63 can fit in the uppermost header byte) */
-        (*ctarget) = 128 + (str_length % 128);
-        ctarget++;
-        str_length = str_length / 128;
-      }
-      (*ctarget) = str_length + alloc_size;
-      ctarget = ctarget + 1;
-
-      /* Copy the C string and return */
-      strcpy (ctarget, (init_parameters + 1)); /* +1 over the '@' */
-      return *target;
-     
-    break;
-
-    default: /* Default case = the init_parameter is a loren_ipsum string */
-      printf ("lor_init() default not yet implemented.\n");
-      return NULL;
-  }
-}
-
-ipsum lor_strcat (ipsum *dest, void *src) {
-  return *dest;
-}
