@@ -6,65 +6,117 @@
 #include <string.h>
 #include "loren_ipsum.h"
 
-ipsum lor_init (ipsum *target, const char *init_param, int alloc_size)
+ipsum lor_init (ipsum *target, int flags, int alloc_size)
 {
-  /* The initialization parameter is usually a loren_ipsum string that should
-   * be copied into the new dynamic ipsum string.
-   * There are 8 special exceptions, each with an action:
-   * (1) Zero - generate empty string
-   * (2) LOR_RECURRENT - generate threadsafe header + empty string
-   * (3) LOR_RECURSE - generate recursion header + empty set
-   * (4) LOR_REL_PTR - error
-   * (5) LOR_ABS_PTR - error
-   * (6) LOR_PADDING - error
-   * (7) LOR_CSTRING - generate loren ipsum string from C string
-   */ 
+  int ipsize, hdr_length, str_length;
 
-  char header[LOR_MAX_HEADER_LENGTH];
-  int ipsize, hdr_length, str_length, alloc_size;
-  ipsize = header_length = alloc_size = 0;
-
-  if (LOR_CONCURRENT & init_param[0])
+  /* Count the Number of Special Headers */
+  hdr_length = 1;
+  int i;
+  for (i=0; i<8; i++)
   {
-    printf ("lor_init() concurrency not yet supported.\n");
+    if (flags & (1 << i))
+      hdr_length += sizeof (int);   
   }
 
-  if ((LOR_RECURSE & init_param[0]) && (LOR_ABS_PTR & init_param[0]))
+  /* Test for Invalid Combinations */
+  if (alloc_size > LOR_MAX_ALLOC_SIZE)
+  {
+    fprintf (stderr, "Error: alloc_size exceeds LOR_MAX_ALLOC_SIZE in ");
+    fprintf (stderr, "lor_init() parameter.\n");
+    exit (EXIT_FAILURE);
+  }
+
+  if ( (LOR_RECURSE | LOR_ABS_PTR) == flags & (LOR_RECURSE | LOR_ABS_PTR))
   {
     fprintf (stderr, "Error: LOR_RECURSE and LOR_ABS_PTR are mutually");
     fprintf (stderr, " exclusive options for lor_init()\n");
     exit (EXIT_FAILURE);
   }
 
-  if (LOR_RECURSE & init_parameters[0])
-  {
-    printf ("lor_init() recursive strings not yet supported.\n");
-  }
-
-  if (LOR_ABS_PTR & init_parameters[0])
-  {
-    printf ("lor_init() absolute pointers not yet implemented.\n");
-  }
-
-  if (LOR_PADDING & init_parameters[0])
+  if (LOR_PADDING & flags)
   {
     fprintf (stderr, "Error: LOR_PADDING not valid option for lor_init()\n");
     exit (EXIT_FAILURE);
   }
 
-  if ((LOR_CSTRING & init_parameters[0]) & (~LOR_CSTRING & init_parameters[0]))
+  if (LOR_CSTRING & flags)
   {
-    fprintf (stderr, "Error: LOR_CSTRING not compatible with any other ");
-    fprintf (stderr, "options for lor_init().\n");
+    fprintf (stderr, "Error: LOR_CSTRING not valid option for lor_init()\n");
     exit (EXIT_FAILURE);
   }
 
-  if (LOR_CSTRING == init_parameters[0])
+  /* Determine Binary Allocation Size */
+  ipsize = hdr_length;
+  alloc_size = (alloc_size > ipsize) ? alloc_size : ipsize;
+  alloc_size = (alloc_size > sizeof (int)) ? alloc_size : sizeof (int);
+  int log;
+  log = 0;
+  while ( (alloc_size-1) / (1 << ++log) > 0);
+  alloc_size = 1 << log;
+  
+  /* Allocate Memory */
+  *target = malloc (alloc_size);
+  if (*target == NULL)
+    return NULL;
+  char *ctarget;
+  ctarget = (char*) *target;
+
+  /* Generate Special Headers */
+  hdr_length = 0;
+
+  if (LOR_CONCURRENT & flags)
   {
-    printf ("lor_init() c strings not yet implemented.\n");
+    printf ("lor_init() concurrency not yet supported.\n");
+    hdr_length += sizeof (int);
   }
+
+  if (LOR_RECURSE & flags)
+  {
+    printf ("lor_init() recursive strings not yet supported.\n");
+    hdr_length += sizeof (int);
+  }
+
+  if (LOR_ABS_PTR & flags)
+  {
+    printf ("lor_init() absolute pointers not yet implemented.\n");
+    hdr_length += sizeof (int);
+  }
+
+  /* Should there be a Standard Header*/
+  if (LOR_ABS_PTR & flags)
+    return *target;
+
+  /* Generate a Standard Header and Return */
+  lor_write_std_header (ctarget + hdr_length, alloc_size, ipsize, 1);
+  return *target;  
 }
 
+extern inline void lor_write_std_header (void *dest,
+  int alloc_size,
+  int ipsize,
+  int hdr_size)
+{
+  char* cdest;
+  cdest = (char*) dest;
+
+  int alloc_size_flag;
+  if (alloc_size == ipsize)
+    alloc_size_flag = (1 << (7*hdr_size-1));
+  else
+    alloc_size_flag = alloc_size;
+
+  int header;
+  header = ipsize + alloc_size_flag;
+
+  int i;
+  for (i = 0; i < hdr_size; i++)
+  {
+    cdest[i] = 128 + header % 128;
+    header = header / 128;
+  }
+  cdest[i] -= 128; 
+}
 
 extern inline int lor_parse_std_header (const void *hdr,
   int *alloc_size,

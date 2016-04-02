@@ -8,10 +8,8 @@ int main () {
   // Test Dynamic Initalization
   ipsum str1, str2, str3, str4, str5, str6;
 
-  if (!lor_init (&str1, 0, 0) )
-    printf ("lor_init(&str1, LOR_NULL) fails.\n");
+  lor_init (&str1, LOR_CONCURRENT, 0);
 
-  lor_init (&str2, "@1234", 16);
 
 /*
   // Test static vs dynamic type checking
