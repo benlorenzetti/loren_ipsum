@@ -1,7 +1,7 @@
 default:	test
 
 test: loren_ipsum.o test.o
-	gcc loren_ipsum.o test.o -o test
+	gcc loren_ipsum.o test.o -o test.exe
 
 test.o: test.c
 	gcc test.c -c

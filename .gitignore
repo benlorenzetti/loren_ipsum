@@ -1,0 +1,5 @@
+# Ignore Temporary Swap Files Produced by VIM
+*.swp
+# Ignore Object Files and Executables
+*.o
+*.exe

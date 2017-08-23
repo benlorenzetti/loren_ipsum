@@ -83,4 +83,11 @@ inline int lor_parse_std_header (const void*, int*, int*);
 
 inline void lor_write_std_header (void*, int, int, int);
 
+char* binary_header_helper (char *, const void *);
+
+/*   A helper function for debugging. Pass in character array of size
+ * 100 and an ipsum variable or ipstat array whose header will be
+ * read.
+ */
+
 #endif
